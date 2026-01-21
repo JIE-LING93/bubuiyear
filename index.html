@@ -3,10 +3,8 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>布布一二影片連結站</title>
+  <title>影片連結站</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet">
   <style>
     body {
@@ -40,6 +38,8 @@
     }
   </style>
   <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full">
   <div id="app-wrapper" class="w-full h-full overflow-auto" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);"><!-- Header -->
@@ -48,7 +48,7 @@
      <svg width="64" height="64" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="48" height="40" rx="4" fill="#e94560" opacity="0.9" /> <polygon points="28,24 28,44 44,34" fill="white" />
      </svg>
     </div>
-    <h1 id="site-title" class="text-4xl md:text-5xl font-bold text-white mb-3">布布一二影片連結站</h1>
+    <h1 id="site-title" class="text-4xl md:text-5xl font-bold text-white mb-3">影片連結站</h1>
     <p id="site-subtitle" class="text-lg text-gray-300">收藏你喜愛的影片，輕鬆找到每一集</p><!-- Search Bar -->
     <div class="max-w-2xl mx-auto mt-8">
      <div class="relative"><input type="text" id="search-input" placeholder="🔍 搜尋系列名稱、集數、標題..." class="w-full px-6 py-4 rounded-2xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2);">
@@ -74,15 +74,16 @@
        <div><label for="input-series-color" class="block text-white text-sm font-medium mb-2">系列顏色</label> <input type="color" id="input-series-color" value="#667eea" class="w-full h-12 rounded-xl cursor-pointer" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
        </div><button type="submit" id="submit-btn" class="w-full py-4 rounded-xl font-bold text-white transition-all" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);"> ➕ 新增影片 </button>
       </form>
-      <div id="loading-message" class="hidden mt-4 text-center text-white">
-       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-       <p id="loading-text" class="mt-2">正在儲存...</p>
-      </div>
       <div id="success-message" class="hidden mt-4 p-4 rounded-xl text-white text-center" style="background: rgba(76, 175, 80, 0.2);">
        ✅ 新增成功！
       </div>
       <div id="error-message" class="hidden mt-4 p-4 rounded-xl text-white text-center" style="background: rgba(244, 67, 54, 0.2);">
-       ❌ 新增失敗，請稍後再試
+       ❌ 操作失敗，請稍後再試
+      </div><!-- Export/Import Section -->
+      <div class="mt-6 pt-6 border-t border-white/20">
+       <h3 class="text-lg font-bold text-white mb-4">📦 資料備份</h3>
+       <div class="flex gap-3"><button id="export-btn" class="flex-1 py-3 rounded-xl font-medium text-white transition-all" style="background: rgba(102,126,234,0.3); border: 1px solid rgba(102,126,234,0.5);"> 💾 匯出資料 </button> <button id="import-btn" class="flex-1 py-3 rounded-xl font-medium text-white transition-all" style="background: rgba(102,126,234,0.3); border: 1px solid rgba(102,126,234,0.5);"> 📥 匯入資料 </button>
+       </div><input type="file" id="import-file" accept=".json" class="hidden">
       </div>
      </div>
     </section><!-- Cloud Section -->
@@ -108,41 +109,51 @@
      </div>
      <div id="empty-state" class="text-center py-12 text-gray-400">
       <p class="text-lg">目前還沒有影片，使用管理員模式開始新增吧！</p>
+      <p class="text-sm mt-2">💡 點擊標題下方空白處 5 次進入管理模式</p>
      </div>
     </section>
    </main><!-- Footer -->
    <footer class="text-center py-8 text-gray-500 text-sm">
-    <p>✨ 小小一二更新中✨</p>
+    <p>✨ 用心整理，輕鬆觀看 ✨</p>
+    <p class="text-xs mt-2">資料儲存在瀏覽器本地 | GitHub Pages 版本</p>
    </footer>
   </div>
   <script>
-    const defaultConfig = {
-      site_title: '影片連結站',
-      site_subtitle: '收藏你喜愛的影片，輕鬆找到每一集',
-      cloud_title: '☁️ 雲端資源專區',
-      cloud_url: '#',
-      primary_color: '#e94560',
-      background_color: '#1a1a2e',
-      text_color: '#ffffff',
-      surface_color: 'rgba(255,255,255,0.08)',
-      accent_color: '#667eea'
-    };
-
-    let config = { ...defaultConfig };
+    // LocalStorage key
+    const STORAGE_KEY = 'video_links_data';
+    const CLOUD_URL_KEY = 'video_links_cloud_url';
+    
     let allVideos = [];
     let isAdminMode = false;
     let clickCount = 0;
     let clickTimer = null;
+    let editingId = null;
 
-    // Data SDK Handler
-    const dataHandler = {
-      onDataChanged(data) {
-        allVideos = data || [];
-        renderSeries();
-        updateSeriesList();
+    // Load data from localStorage
+    function loadData() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          allVideos = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error('Failed to load data:', e);
+        allVideos = [];
       }
-    };
-    
+      renderSeries();
+      updateSeriesList();
+    }
+
+    // Save data to localStorage
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(allVideos));
+      } catch (e) {
+        console.error('Failed to save data:', e);
+        showMessage('error', '儲存失敗：儲存空間不足');
+      }
+    }
+
     // Update series list dropdown
     function updateSeriesList() {
       const seriesList = document.getElementById('series-list');
@@ -150,16 +161,6 @@
       
       const uniqueSeries = [...new Set(allVideos.map(v => v.series_name))];
       seriesList.innerHTML = uniqueSeries.map(name => `<option value="${name}">`).join('');
-    }
-
-    // Initialize Data SDK
-    async function initDataSDK() {
-      if (window.dataSdk) {
-        const result = await window.dataSdk.init(dataHandler);
-        if (!result.isOk) {
-          console.error('Failed to initialize data SDK');
-        }
-      }
     }
 
     // Group videos by series
@@ -224,8 +225,8 @@
                   <span class="ml-2">${ep.episode_title}</span>
                 </a>
                 ${isAdminMode ? `
-                  <button onclick="event.stopPropagation(); editVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
-                  <button onclick="event.stopPropagation(); deleteVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
+                  <button onclick="event.stopPropagation(); editVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
+                  <button onclick="event.stopPropagation(); deleteVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
                 ` : ''}
               </div>
             `).join('')}
@@ -287,8 +288,8 @@
                     <span class="ml-2">${ep.episode_title}</span>
                   </a>
                   ${isAdminMode ? `
-                    <button onclick="event.stopPropagation(); editVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
-                    <button onclick="event.stopPropagation(); deleteVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
+                    <button onclick="event.stopPropagation(); editVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
+                    <button onclick="event.stopPropagation(); deleteVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
                   ` : ''}
                 </div>
               `).join('')}
@@ -296,6 +297,24 @@
           </div>
         `).join('');
       });
+    }
+
+    // Show message
+    function showMessage(type, text) {
+      const successMsg = document.getElementById('success-message');
+      const errorMsg = document.getElementById('error-message');
+      
+      if (type === 'success') {
+        successMsg.textContent = text;
+        successMsg.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+        setTimeout(() => successMsg.classList.add('hidden'), 3000);
+      } else {
+        errorMsg.textContent = text;
+        errorMsg.classList.remove('hidden');
+        successMsg.classList.add('hidden');
+        setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+      }
     }
 
     // Click detection for admin mode
@@ -409,10 +428,8 @@
         adminPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
       
-      // Re-render to show edit/delete buttons
       renderSeries();
       
-      // Show success message
       const successDiv = document.createElement('div');
       successDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
       successDiv.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
@@ -420,16 +437,17 @@
       document.body.appendChild(successDiv);
       
       setTimeout(() => {
-        document.body.removeChild(successDiv);
+        if (document.body.contains(successDiv)) {
+          document.body.removeChild(successDiv);
+        }
       }, 3000);
     }
 
     // Delete video
-    window.deleteVideo = async function(backendId) {
-      const video = allVideos.find(v => v.__backendId === backendId);
+    window.deleteVideo = function(id) {
+      const video = allVideos.find(v => v.id === id);
       if (!video) return;
       
-      // Show inline confirmation
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 flex items-center justify-center z-50';
       modal.style.background = 'rgba(0,0,0,0.7)';
@@ -465,79 +483,57 @@
         document.body.removeChild(modal);
       });
       
-      document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-        const btn = document.getElementById('confirm-delete-btn');
-        btn.disabled = true;
-        btn.textContent = '刪除中...';
-        
-        const result = await window.dataSdk.delete(video);
-        
+      document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+        allVideos = allVideos.filter(v => v.id !== id);
+        saveData();
+        renderSeries();
+        updateSeriesList();
         document.body.removeChild(modal);
         
-        if (result.isOk) {
-          // Show success
-          const successDiv = document.createElement('div');
-          successDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
-          successDiv.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
-          successDiv.textContent = '✅ 刪除成功';
-          document.body.appendChild(successDiv);
-          setTimeout(() => document.body.removeChild(successDiv), 3000);
-        } else {
-          // Show error
-          const errorDiv = document.createElement('div');
-          errorDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
-          errorDiv.style.background = 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)';
-          errorDiv.textContent = '❌ 刪除失敗';
-          document.body.appendChild(errorDiv);
-          setTimeout(() => document.body.removeChild(errorDiv), 3000);
-        }
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
+        successDiv.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+        successDiv.textContent = '✅ 刪除成功';
+        document.body.appendChild(successDiv);
+        setTimeout(() => {
+          if (document.body.contains(successDiv)) {
+            document.body.removeChild(successDiv);
+          }
+        }, 3000);
       });
     }
 
     // Edit video
-    window.editVideo = function(backendId) {
-      const video = allVideos.find(v => v.__backendId === backendId);
+    window.editVideo = function(id) {
+      const video = allVideos.find(v => v.id === id);
       if (!video) return;
       
-      // Fill form with existing data
+      editingId = id;
       document.getElementById('input-series-name').value = video.series_name;
-      // Extract number from EP.XX format
       const epNum = video.episode_number.replace('EP.', '');
       document.getElementById('input-episode-number').value = parseInt(epNum) || epNum;
       document.getElementById('input-episode-title').value = video.episode_title;
       document.getElementById('input-video-url').value = video.video_url;
       document.getElementById('input-series-color').value = video.series_color;
       
-      // Change button to update mode
       const submitBtn = document.getElementById('submit-btn');
       submitBtn.textContent = '✏️ 更新影片';
-      submitBtn.dataset.editId = backendId;
       
-      // Scroll to form
       const adminPanel = document.getElementById('admin-panel');
       if (adminPanel) {
         adminPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
-    // Admin mode toggle
-    function setupAdmin() {
-      // Admin mode is now controlled by click detection and password
-    }
-
     // Form submission
     function setupForm() {
       const form = document.getElementById('admin-form');
       const submitBtn = document.getElementById('submit-btn');
-      const loadingMsg = document.getElementById('loading-message');
-      const successMsg = document.getElementById('success-message');
-      const errorMsg = document.getElementById('error-message');
       const seriesNameInput = document.getElementById('input-series-name');
       const seriesColorInput = document.getElementById('input-series-color');
       
       if (!form) return;
       
-      // Auto-fill color when series name is selected
       if (seriesNameInput && seriesColorInput) {
         seriesNameInput.addEventListener('input', () => {
           const selectedSeries = allVideos.find(v => v.series_name === seriesNameInput.value);
@@ -547,25 +543,14 @@
         });
       }
       
-      form.addEventListener('submit', async (e) => {
+      form.addEventListener('submit', (e) => {
         e.preventDefault();
-        
-        const editId = submitBtn.dataset.editId;
-        const isEditMode = !!editId;
-        
-        if (!isEditMode && allVideos.length >= 999) {
-          errorMsg.textContent = '❌ 已達最大限制 999 筆，請先刪除部分影片';
-          errorMsg.classList.remove('hidden');
-          setTimeout(() => errorMsg.classList.add('hidden'), 3000);
-          return;
-        }
         
         const episodeNum = document.getElementById('input-episode-number').value.trim();
         const seriesName = document.getElementById('input-series-name').value.trim();
-        const uniqueId = `${seriesName}_EP${episodeNum.padStart(2, '0')}_${Date.now()}`;
         
         const videoData = {
-          unique_id: uniqueId,
+          id: editingId || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           series_name: seriesName,
           series_emoji: '📺',
           episode_number: `EP.${episodeNum.padStart(2, '0')}`,
@@ -575,176 +560,110 @@
           created_at: new Date().toISOString()
         };
         
-        // Show loading
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.6';
-        const loadingText = document.getElementById('loading-text');
-        if (loadingText) loadingText.textContent = isEditMode ? '更新中...' : '儲存中...';
-        loadingMsg.classList.remove('hidden');
-        successMsg.classList.add('hidden');
-        errorMsg.classList.add('hidden');
-        
-        let result;
-        if (isEditMode) {
-          // Update existing video
-          const existingVideo = allVideos.find(v => v.__backendId === editId);
-          if (existingVideo) {
-            result = await window.dataSdk.update({ ...existingVideo, ...videoData });
+        if (editingId) {
+          const index = allVideos.findIndex(v => v.id === editingId);
+          if (index !== -1) {
+            allVideos[index] = videoData;
           }
+          showMessage('success', '✅ 更新成功！');
+          editingId = null;
         } else {
-          // Create new video
-          result = await window.dataSdk.create(videoData);
+          allVideos.push(videoData);
+          showMessage('success', '✅ 新增成功！');
         }
         
-        // Hide loading
-        loadingMsg.classList.add('hidden');
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
+        saveData();
+        renderSeries();
+        updateSeriesList();
+        form.reset();
+        document.getElementById('input-series-color').value = '#667eea';
+        submitBtn.textContent = '➕ 新增影片';
+      });
+    }
+
+    // Export data
+    function setupExport() {
+      const exportBtn = document.getElementById('export-btn');
+      if (!exportBtn) return;
+      
+      exportBtn.addEventListener('click', () => {
+        const dataStr = JSON.stringify(allVideos, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `video_links_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         
-        if (result && result.isOk) {
-          successMsg.textContent = isEditMode ? '✅ 更新成功！' : '✅ 新增成功！';
-          successMsg.classList.remove('hidden');
-          form.reset();
-          document.getElementById('input-series-color').value = '#667eea';
-          submitBtn.textContent = '➕ 新增影片';
-          delete submitBtn.dataset.editId;
-          setTimeout(() => successMsg.classList.add('hidden'), 3000);
-        } else {
-          errorMsg.textContent = isEditMode ? '❌ 更新失敗，請稍後再試' : '❌ 新增失敗，請稍後再試';
-          errorMsg.classList.remove('hidden');
-          setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+        showMessage('success', '✅ 資料已匯出');
+      });
+    }
+
+    // Import data
+    function setupImport() {
+      const importBtn = document.getElementById('import-btn');
+      const importFile = document.getElementById('import-file');
+      
+      if (!importBtn || !importFile) return;
+      
+      importBtn.addEventListener('click', () => {
+        importFile.click();
+      });
+      
+      importFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const imported = JSON.parse(event.target.result);
+            if (Array.isArray(imported)) {
+              allVideos = imported;
+              saveData();
+              renderSeries();
+              updateSeriesList();
+              showMessage('success', '✅ 資料已匯入');
+            } else {
+              showMessage('error', '❌ 檔案格式錯誤');
+            }
+          } catch (err) {
+            showMessage('error', '❌ 檔案讀取失敗');
+          }
+        };
+        reader.readAsText(file);
+        importFile.value = '';
+      });
+    }
+
+    // Cloud section click
+    function setupCloudSection() {
+      const cloudSection = document.getElementById('cloud-section');
+      if (!cloudSection) return;
+      
+      cloudSection.addEventListener('click', () => {
+        const url = localStorage.getItem(CLOUD_URL_KEY) || '#';
+        if (url && url !== '#') {
+          window.open(url, '_blank', 'noopener,noreferrer');
         }
       });
     }
 
-    async function onConfigChange(cfg) {
-      config = { ...defaultConfig, ...cfg };
-      
-      // Update site title
-      const titleEl = document.getElementById('site-title');
-      if (titleEl) titleEl.textContent = config.site_title || defaultConfig.site_title;
-      
-      // Update subtitle
-      const subtitleEl = document.getElementById('site-subtitle');
-      if (subtitleEl) subtitleEl.textContent = config.site_subtitle || defaultConfig.site_subtitle;
-      
-      // Update cloud title
-      const cloudTitleEl = document.getElementById('cloud-title');
-      if (cloudTitleEl) cloudTitleEl.textContent = config.cloud_title || defaultConfig.cloud_title;
-      
-      // Update cloud section click handler
-      const cloudSection = document.getElementById('cloud-section');
-      if (cloudSection) {
-        cloudSection.onclick = () => {
-          const url = config.cloud_url || defaultConfig.cloud_url;
-          if (url && url !== '#') {
-            window.open(url, '_blank', 'noopener,noreferrer');
-          }
-        };
-      }
-      
-      // Update colors
-      const wrapper = document.getElementById('app-wrapper');
-      if (wrapper && config.background_color) {
-        wrapper.style.background = `linear-gradient(135deg, ${config.background_color} 0%, #16213e 50%, #0f3460 100%)`;
-      }
-      
-      if (config.primary_color) {
-        const cloudSec = document.getElementById('cloud-section');
-        if (cloudSec) {
-          cloudSec.style.background = `linear-gradient(135deg, ${config.primary_color} 0%, #ff6b6b 100%)`;
-        }
-      }
-    }
-
-    function mapToCapabilities(cfg) {
-      return {
-        recolorables: [
-          {
-            get: () => config.background_color || defaultConfig.background_color,
-            set: (value) => {
-              config.background_color = value;
-              if (window.elementSdk) window.elementSdk.setConfig({ background_color: value });
-            }
-          },
-          {
-            get: () => config.surface_color || defaultConfig.surface_color,
-            set: (value) => {
-              config.surface_color = value;
-              if (window.elementSdk) window.elementSdk.setConfig({ surface_color: value });
-            }
-          },
-          {
-            get: () => config.text_color || defaultConfig.text_color,
-            set: (value) => {
-              config.text_color = value;
-              if (window.elementSdk) window.elementSdk.setConfig({ text_color: value });
-            }
-          },
-          {
-            get: () => config.primary_color || defaultConfig.primary_color,
-            set: (value) => {
-              config.primary_color = value;
-              if (window.elementSdk) window.elementSdk.setConfig({ primary_color: value });
-            }
-          },
-          {
-            get: () => config.accent_color || defaultConfig.accent_color,
-            set: (value) => {
-              config.accent_color = value;
-              if (window.elementSdk) window.elementSdk.setConfig({ accent_color: value });
-            }
-          }
-        ],
-        borderables: [],
-        fontEditable: {
-          get: () => config.font_family || 'Noto Sans TC',
-          set: (value) => {
-            config.font_family = value;
-            if (window.elementSdk) window.elementSdk.setConfig({ font_family: value });
-          }
-        },
-        fontSizeable: {
-          get: () => config.font_size || 16,
-          set: (value) => {
-            config.font_size = value;
-            if (window.elementSdk) window.elementSdk.setConfig({ font_size: value });
-          }
-        }
-      };
-    }
-
-    function mapToEditPanelValues(cfg) {
-      return new Map([
-        ['site_title', cfg.site_title || defaultConfig.site_title],
-        ['site_subtitle', cfg.site_subtitle || defaultConfig.site_subtitle],
-        ['cloud_title', cfg.cloud_title || defaultConfig.cloud_title],
-        ['cloud_url', cfg.cloud_url || defaultConfig.cloud_url]
-      ]);
-    }
-
-    // Initialize everything
-    async function init() {
-      await initDataSDK();
+    // Initialize
+    function init() {
+      loadData();
       setupSearch();
       setupClickDetection();
-      setupAdmin();
       setupForm();
-      
-      if (window.elementSdk) {
-        window.elementSdk.init({
-          defaultConfig,
-          onConfigChange,
-          mapToCapabilities,
-          mapToEditPanelValues
-        });
-      }
-      
-      onConfigChange(config);
+      setupExport();
+      setupImport();
+      setupCloudSection();
     }
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c17e98a91e54a54',t:'MTc2OTAxMDA1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c17fd6741fea9c1',t:'MTc2OTAxMDg2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
