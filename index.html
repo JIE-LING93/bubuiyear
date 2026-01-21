@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="zh-TW" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>影片連結站</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    .series-card {
+      transition: all 0.3s ease;
+    }
+    .series-card:hover {
+      transform: translateY(-4px);
+    }
+    .episode-item {
+      transition: all 0.2s ease;
+    }
+    .episode-item:hover {
+      transform: translateX(4px);
+    }
+    .cloud-btn {
+      transition: all 0.3s ease;
+    }
+    .cloud-btn:hover {
+      transform: scale(1.02);
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .floating {
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full">
+  <div id="app-wrapper" class="w-full h-full overflow-auto" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);"><!-- Header -->
+   <header class="text-center py-12 px-4">
+    <div class="floating mb-4">
+     <svg width="64" height="64" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="48" height="40" rx="4" fill="#e94560" opacity="0.9" /> <polygon points="28,24 28,44 44,34" fill="white" />
+     </svg>
+    </div>
+    <h1 id="site-title" class="text-4xl md:text-5xl font-bold text-white mb-3">影片連結站</h1>
+    <p id="site-subtitle" class="text-lg text-gray-300">收藏你喜愛的影片，輕鬆找到每一集</p><!-- Search Bar -->
+    <div class="max-w-2xl mx-auto mt-8">
+     <div class="relative"><input type="text" id="search-input" placeholder="🔍 搜尋系列名稱、集數、標題..." class="w-full px-6 py-4 rounded-2xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2);">
+     </div>
+    </div><!-- Admin Toggle (Hidden, activated by 5 clicks) -->
+    <div id="click-detector" class="mt-6 h-8"></div>
+   </header><!-- Main Content -->
+   <main class="max-w-6xl mx-auto px-4 pb-12"><!-- Admin Panel -->
+    <section id="admin-panel" class="mb-12 hidden">
+     <div class="rounded-2xl p-6" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 2px solid rgba(233,69,96,0.5);">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2"><span>⚙️</span> 管理員控制台</h2>
+      <form id="admin-form" class="space-y-4">
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label for="input-series-name" class="block text-white text-sm font-medium mb-2">系列名稱</label> <input type="text" id="input-series-name" list="series-list" placeholder="例：動漫精選" required class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);"> <datalist id="series-list"> <!-- Will be populated by JavaScript --> </datalist>
+        </div>
+        <div><label for="input-episode-number" class="block text-white text-sm font-medium mb-2">集數（純數字）</label> <input type="number" id="input-episode-number" placeholder="例：1" min="1" required class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+        </div>
+        <div><label for="input-episode-title" class="block text-white text-sm font-medium mb-2">集數標題</label> <input type="text" id="input-episode-title" placeholder="例：開始的冒險" required class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+        </div>
+       </div>
+       <div><label for="input-video-url" class="block text-white text-sm font-medium mb-2">影片連結</label> <input type="url" id="input-video-url" placeholder="https://youtube.com/watch?v=..." required class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+       </div>
+       <div><label for="input-series-color" class="block text-white text-sm font-medium mb-2">系列顏色</label> <input type="color" id="input-series-color" value="#667eea" class="w-full h-12 rounded-xl cursor-pointer" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+       </div><button type="submit" id="submit-btn" class="w-full py-4 rounded-xl font-bold text-white transition-all" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);"> ➕ 新增影片 </button>
+      </form>
+      <div id="loading-message" class="hidden mt-4 text-center text-white">
+       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+       <p id="loading-text" class="mt-2">正在儲存...</p>
+      </div>
+      <div id="success-message" class="hidden mt-4 p-4 rounded-xl text-white text-center" style="background: rgba(76, 175, 80, 0.2);">
+       ✅ 新增成功！
+      </div>
+      <div id="error-message" class="hidden mt-4 p-4 rounded-xl text-white text-center" style="background: rgba(244, 67, 54, 0.2);">
+       ❌ 新增失敗，請稍後再試
+      </div>
+     </div>
+    </section><!-- Cloud Section -->
+    <section class="mb-12">
+     <div id="cloud-section" class="cloud-btn cursor-pointer rounded-2xl p-6 flex items-center justify-between" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);">
+      <div class="flex items-center gap-4">
+       <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+        <svg width="32" height="32" viewbox="0 0 24 24" fill="white"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+        </svg>
+       </div>
+       <div>
+        <h2 id="cloud-title" class="text-xl font-bold text-white">☁️ 雲端資源專區</h2>
+        <p class="text-white/80 text-sm">點擊前往雲端硬碟</p>
+       </div>
+      </div>
+      <svg width="24" height="24" viewbox="0 0 24 24" fill="white" class="opacity-80"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+      </svg>
+     </div>
+    </section><!-- Series Grid -->
+    <section>
+     <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2"><span>📺</span> 影片系列</h2>
+     <div id="series-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><!-- Will be populated by JavaScript -->
+     </div>
+     <div id="empty-state" class="text-center py-12 text-gray-400">
+      <p class="text-lg">目前還沒有影片，使用管理員模式開始新增吧！</p>
+     </div>
+    </section>
+   </main><!-- Footer -->
+   <footer class="text-center py-8 text-gray-500 text-sm">
+    <p>✨ 用心整理，輕鬆觀看 ✨</p>
+   </footer>
+  </div>
+  <script>
+    const defaultConfig = {
+      site_title: '影片連結站',
+      site_subtitle: '收藏你喜愛的影片，輕鬆找到每一集',
+      cloud_title: '☁️ 雲端資源專區',
+      cloud_url: '#',
+      primary_color: '#e94560',
+      background_color: '#1a1a2e',
+      text_color: '#ffffff',
+      surface_color: 'rgba(255,255,255,0.08)',
+      accent_color: '#667eea'
+    };
+
+    let config = { ...defaultConfig };
+    let allVideos = [];
+    let isAdminMode = false;
+    let clickCount = 0;
+    let clickTimer = null;
+
+    // Data SDK Handler
+    const dataHandler = {
+      onDataChanged(data) {
+        allVideos = data || [];
+        renderSeries();
+        updateSeriesList();
+      }
+    };
+    
+    // Update series list dropdown
+    function updateSeriesList() {
+      const seriesList = document.getElementById('series-list');
+      if (!seriesList) return;
+      
+      const uniqueSeries = [...new Set(allVideos.map(v => v.series_name))];
+      seriesList.innerHTML = uniqueSeries.map(name => `<option value="${name}">`).join('');
+    }
+
+    // Initialize Data SDK
+    async function initDataSDK() {
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error('Failed to initialize data SDK');
+        }
+      }
+    }
+
+    // Group videos by series
+    function groupBySeries(videos) {
+      const grouped = {};
+      videos.forEach(video => {
+        if (!grouped[video.series_name]) {
+          grouped[video.series_name] = {
+            name: video.series_name,
+            emoji: video.series_emoji,
+            color: video.series_color,
+            episodes: []
+          };
+        }
+        grouped[video.series_name].episodes.push(video);
+      });
+      
+      // Sort episodes within each series by episode number
+      Object.values(grouped).forEach(series => {
+        series.episodes.sort((a, b) => {
+          const numA = parseInt(a.episode_number.replace('EP.', '')) || 0;
+          const numB = parseInt(b.episode_number.replace('EP.', '')) || 0;
+          return numA - numB;
+        });
+      });
+      
+      return Object.values(grouped);
+    }
+
+    // Render series cards
+    function renderSeries() {
+      const container = document.getElementById('series-container');
+      const emptyState = document.getElementById('empty-state');
+      
+      if (!container || !emptyState) return;
+      
+      const series = groupBySeries(allVideos);
+      
+      if (series.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      container.innerHTML = series.map(s => `
+        <div class="series-card rounded-2xl p-5" style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style="background: linear-gradient(135deg, ${s.color} 0%, ${s.color}dd 100%);">
+              ${s.emoji}
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white">${s.name}</h3>
+              <p class="text-gray-400 text-sm">共 ${s.episodes.length} 集</p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            ${s.episodes.map(ep => `
+              <div class="episode-item flex items-center gap-2 px-4 py-2.5 rounded-lg" style="background: rgba(255,255,255,0.05);">
+                <a href="${ep.video_url}" target="_blank" rel="noopener noreferrer" class="flex-1 text-gray-200 hover:text-white no-underline" style="display: block;">
+                  <span class="text-sm font-medium" style="color: ${s.color};">${ep.episode_number}</span>
+                  <span class="ml-2">${ep.episode_title}</span>
+                </a>
+                ${isAdminMode ? `
+                  <button onclick="event.stopPropagation(); editVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
+                  <button onclick="event.stopPropagation(); deleteVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Search functionality
+    function setupSearch() {
+      const searchInput = document.getElementById('search-input');
+      if (!searchInput) return;
+      
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        
+        if (!query) {
+          renderSeries();
+          return;
+        }
+        
+        const filtered = allVideos.filter(video => 
+          video.series_name.toLowerCase().includes(query) ||
+          video.episode_number.toLowerCase().includes(query) ||
+          video.episode_title.toLowerCase().includes(query)
+        );
+        
+        const container = document.getElementById('series-container');
+        const emptyState = document.getElementById('empty-state');
+        
+        if (!container || !emptyState) return;
+        
+        const series = groupBySeries(filtered);
+        
+        if (series.length === 0) {
+          container.innerHTML = '';
+          emptyState.innerHTML = '<p class="text-lg">找不到符合的影片 😢</p>';
+          emptyState.classList.remove('hidden');
+          return;
+        }
+        
+        emptyState.classList.add('hidden');
+        container.innerHTML = series.map(s => `
+          <div class="series-card rounded-2xl p-5" style="background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style="background: linear-gradient(135deg, ${s.color} 0%, ${s.color}dd 100%);">
+                ${s.emoji}
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">${s.name}</h3>
+                <p class="text-gray-400 text-sm">共 ${s.episodes.length} 集</p>
+              </div>
+            </div>
+            <div class="space-y-2">
+              ${s.episodes.map(ep => `
+                <div class="episode-item flex items-center gap-2 px-4 py-2.5 rounded-lg" style="background: rgba(255,255,255,0.05);">
+                  <a href="${ep.video_url}" target="_blank" rel="noopener noreferrer" class="flex-1 text-gray-200 hover:text-white no-underline" style="display: block;">
+                    <span class="text-sm font-medium" style="color: ${s.color};">${ep.episode_number}</span>
+                    <span class="ml-2">${ep.episode_title}</span>
+                  </a>
+                  ${isAdminMode ? `
+                    <button onclick="event.stopPropagation(); editVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
+                    <button onclick="event.stopPropagation(); deleteVideo('${ep.__backendId}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    // Click detection for admin mode
+    function setupClickDetection() {
+      const clickDetector = document.getElementById('click-detector');
+      if (!clickDetector) return;
+      
+      clickDetector.addEventListener('click', (e) => {
+        clickCount++;
+        
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+        }
+        
+        clickTimer = setTimeout(() => {
+          clickCount = 0;
+        }, 2000);
+        
+        if (clickCount === 5) {
+          clickCount = 0;
+          clearTimeout(clickTimer);
+          showPasswordPrompt();
+        }
+      });
+    }
+
+    // Show password input modal
+    function showPasswordPrompt() {
+      const modal = document.createElement('div');
+      modal.id = 'password-modal';
+      modal.className = 'fixed inset-0 flex items-center justify-center z-50';
+      modal.style.background = 'rgba(0,0,0,0.7)';
+      modal.style.backdropFilter = 'blur(10px)';
+      
+      modal.innerHTML = `
+        <div class="rounded-2xl p-8 max-w-md w-full mx-4" style="background: rgba(26,26,46,0.95); border: 2px solid rgba(233,69,96,0.5);">
+          <h3 class="text-2xl font-bold text-white mb-4 text-center">🔐 管理員登入</h3>
+          <p class="text-gray-300 text-center mb-6">請輸入密碼以進入管理員模式</p>
+          <form id="password-form">
+            <label for="password-input" class="block text-white text-sm font-medium mb-2">密碼</label>
+            <input 
+              type="password" 
+              id="password-input"
+              placeholder="請輸入密碼"
+              required
+              class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none mb-4"
+              style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);"
+            />
+            <div id="error-text" class="hidden text-red-400 text-sm mb-4 text-center">❌ 密碼錯誤，請重試</div>
+            <div class="flex gap-3">
+              <button 
+                type="button"
+                id="cancel-btn"
+                class="flex-1 py-3 rounded-xl font-medium text-white transition-all"
+                style="background: rgba(255,255,255,0.1);"
+              >
+                取消
+              </button>
+              <button 
+                type="submit"
+                class="flex-1 py-3 rounded-xl font-bold text-white transition-all"
+                style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);"
+              >
+                登入
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      const passwordInput = document.getElementById('password-input');
+      const passwordForm = document.getElementById('password-form');
+      const cancelBtn = document.getElementById('cancel-btn');
+      const errorText = document.getElementById('error-text');
+      
+      passwordInput.focus();
+      
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      passwordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const password = passwordInput.value;
+        
+        if (password === '0977') {
+          document.body.removeChild(modal);
+          enterAdminMode();
+        } else {
+          errorText.classList.remove('hidden');
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+      });
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      });
+    }
+
+    // Enter admin mode
+    function enterAdminMode() {
+      isAdminMode = true;
+      const adminPanel = document.getElementById('admin-panel');
+      if (adminPanel) {
+        adminPanel.classList.remove('hidden');
+        adminPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      
+      // Re-render to show edit/delete buttons
+      renderSeries();
+      
+      // Show success message
+      const successDiv = document.createElement('div');
+      successDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
+      successDiv.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+      successDiv.textContent = '✅ 管理員模式已開啟';
+      document.body.appendChild(successDiv);
+      
+      setTimeout(() => {
+        document.body.removeChild(successDiv);
+      }, 3000);
+    }
+
+    // Delete video
+    window.deleteVideo = async function(backendId) {
+      const video = allVideos.find(v => v.__backendId === backendId);
+      if (!video) return;
+      
+      // Show inline confirmation
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 flex items-center justify-center z-50';
+      modal.style.background = 'rgba(0,0,0,0.7)';
+      modal.style.backdropFilter = 'blur(10px)';
+      
+      modal.innerHTML = `
+        <div class="rounded-2xl p-8 max-w-md w-full mx-4" style="background: rgba(26,26,46,0.95); border: 2px solid rgba(233,69,96,0.5);">
+          <h3 class="text-2xl font-bold text-white mb-4 text-center">🗑️ 確認刪除</h3>
+          <p class="text-gray-300 text-center mb-2">確定要刪除這部影片嗎？</p>
+          <p class="text-white text-center mb-6 font-medium">${video.series_name} - ${video.episode_number}</p>
+          <div class="flex gap-3">
+            <button 
+              id="cancel-delete-btn"
+              class="flex-1 py-3 rounded-xl font-medium text-white transition-all"
+              style="background: rgba(255,255,255,0.1);"
+            >
+              取消
+            </button>
+            <button 
+              id="confirm-delete-btn"
+              class="flex-1 py-3 rounded-xl font-bold text-white transition-all"
+              style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);"
+            >
+              確認刪除
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      document.getElementById('cancel-delete-btn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+      
+      document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('confirm-delete-btn');
+        btn.disabled = true;
+        btn.textContent = '刪除中...';
+        
+        const result = await window.dataSdk.delete(video);
+        
+        document.body.removeChild(modal);
+        
+        if (result.isOk) {
+          // Show success
+          const successDiv = document.createElement('div');
+          successDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
+          successDiv.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+          successDiv.textContent = '✅ 刪除成功';
+          document.body.appendChild(successDiv);
+          setTimeout(() => document.body.removeChild(successDiv), 3000);
+        } else {
+          // Show error
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium';
+          errorDiv.style.background = 'linear-gradient(135deg, #e94560 0%, #ff6b6b 100%)';
+          errorDiv.textContent = '❌ 刪除失敗';
+          document.body.appendChild(errorDiv);
+          setTimeout(() => document.body.removeChild(errorDiv), 3000);
+        }
+      });
+    }
+
+    // Edit video
+    window.editVideo = function(backendId) {
+      const video = allVideos.find(v => v.__backendId === backendId);
+      if (!video) return;
+      
+      // Fill form with existing data
+      document.getElementById('input-series-name').value = video.series_name;
+      // Extract number from EP.XX format
+      const epNum = video.episode_number.replace('EP.', '');
+      document.getElementById('input-episode-number').value = parseInt(epNum) || epNum;
+      document.getElementById('input-episode-title').value = video.episode_title;
+      document.getElementById('input-video-url').value = video.video_url;
+      document.getElementById('input-series-color').value = video.series_color;
+      
+      // Change button to update mode
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.textContent = '✏️ 更新影片';
+      submitBtn.dataset.editId = backendId;
+      
+      // Scroll to form
+      const adminPanel = document.getElementById('admin-panel');
+      if (adminPanel) {
+        adminPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Admin mode toggle
+    function setupAdmin() {
+      // Admin mode is now controlled by click detection and password
+    }
+
+    // Form submission
+    function setupForm() {
+      const form = document.getElementById('admin-form');
+      const submitBtn = document.getElementById('submit-btn');
+      const loadingMsg = document.getElementById('loading-message');
+      const successMsg = document.getElementById('success-message');
+      const errorMsg = document.getElementById('error-message');
+      const seriesNameInput = document.getElementById('input-series-name');
+      const seriesColorInput = document.getElementById('input-series-color');
+      
+      if (!form) return;
+      
+      // Auto-fill color when series name is selected
+      if (seriesNameInput && seriesColorInput) {
+        seriesNameInput.addEventListener('input', () => {
+          const selectedSeries = allVideos.find(v => v.series_name === seriesNameInput.value);
+          if (selectedSeries) {
+            seriesColorInput.value = selectedSeries.series_color;
+          }
+        });
+      }
+      
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const editId = submitBtn.dataset.editId;
+        const isEditMode = !!editId;
+        
+        if (!isEditMode && allVideos.length >= 999) {
+          errorMsg.textContent = '❌ 已達最大限制 999 筆，請先刪除部分影片';
+          errorMsg.classList.remove('hidden');
+          setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+          return;
+        }
+        
+        const episodeNum = document.getElementById('input-episode-number').value.trim();
+        const seriesName = document.getElementById('input-series-name').value.trim();
+        const uniqueId = `${seriesName}_EP${episodeNum.padStart(2, '0')}_${Date.now()}`;
+        
+        const videoData = {
+          unique_id: uniqueId,
+          series_name: seriesName,
+          series_emoji: '📺',
+          episode_number: `EP.${episodeNum.padStart(2, '0')}`,
+          episode_title: document.getElementById('input-episode-title').value.trim(),
+          video_url: document.getElementById('input-video-url').value.trim(),
+          series_color: document.getElementById('input-series-color').value,
+          created_at: new Date().toISOString()
+        };
+        
+        // Show loading
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) loadingText.textContent = isEditMode ? '更新中...' : '儲存中...';
+        loadingMsg.classList.remove('hidden');
+        successMsg.classList.add('hidden');
+        errorMsg.classList.add('hidden');
+        
+        let result;
+        if (isEditMode) {
+          // Update existing video
+          const existingVideo = allVideos.find(v => v.__backendId === editId);
+          if (existingVideo) {
+            result = await window.dataSdk.update({ ...existingVideo, ...videoData });
+          }
+        } else {
+          // Create new video
+          result = await window.dataSdk.create(videoData);
+        }
+        
+        // Hide loading
+        loadingMsg.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        
+        if (result && result.isOk) {
+          successMsg.textContent = isEditMode ? '✅ 更新成功！' : '✅ 新增成功！';
+          successMsg.classList.remove('hidden');
+          form.reset();
+          document.getElementById('input-series-color').value = '#667eea';
+          submitBtn.textContent = '➕ 新增影片';
+          delete submitBtn.dataset.editId;
+          setTimeout(() => successMsg.classList.add('hidden'), 3000);
+        } else {
+          errorMsg.textContent = isEditMode ? '❌ 更新失敗，請稍後再試' : '❌ 新增失敗，請稍後再試';
+          errorMsg.classList.remove('hidden');
+          setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+        }
+      });
+    }
+
+    async function onConfigChange(cfg) {
+      config = { ...defaultConfig, ...cfg };
+      
+      // Update site title
+      const titleEl = document.getElementById('site-title');
+      if (titleEl) titleEl.textContent = config.site_title || defaultConfig.site_title;
+      
+      // Update subtitle
+      const subtitleEl = document.getElementById('site-subtitle');
+      if (subtitleEl) subtitleEl.textContent = config.site_subtitle || defaultConfig.site_subtitle;
+      
+      // Update cloud title
+      const cloudTitleEl = document.getElementById('cloud-title');
+      if (cloudTitleEl) cloudTitleEl.textContent = config.cloud_title || defaultConfig.cloud_title;
+      
+      // Update cloud section click handler
+      const cloudSection = document.getElementById('cloud-section');
+      if (cloudSection) {
+        cloudSection.onclick = () => {
+          const url = config.cloud_url || defaultConfig.cloud_url;
+          if (url && url !== '#') {
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }
+        };
+      }
+      
+      // Update colors
+      const wrapper = document.getElementById('app-wrapper');
+      if (wrapper && config.background_color) {
+        wrapper.style.background = `linear-gradient(135deg, ${config.background_color} 0%, #16213e 50%, #0f3460 100%)`;
+      }
+      
+      if (config.primary_color) {
+        const cloudSec = document.getElementById('cloud-section');
+        if (cloudSec) {
+          cloudSec.style.background = `linear-gradient(135deg, ${config.primary_color} 0%, #ff6b6b 100%)`;
+        }
+      }
+    }
+
+    function mapToCapabilities(cfg) {
+      return {
+        recolorables: [
+          {
+            get: () => config.background_color || defaultConfig.background_color,
+            set: (value) => {
+              config.background_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ background_color: value });
+            }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              config.surface_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ surface_color: value });
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => {
+              config.primary_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ primary_color: value });
+            }
+          },
+          {
+            get: () => config.accent_color || defaultConfig.accent_color,
+            set: (value) => {
+              config.accent_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ accent_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || 'Noto Sans TC',
+          set: (value) => {
+            config.font_family = value;
+            if (window.elementSdk) window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => config.font_size || 16,
+          set: (value) => {
+            config.font_size = value;
+            if (window.elementSdk) window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(cfg) {
+      return new Map([
+        ['site_title', cfg.site_title || defaultConfig.site_title],
+        ['site_subtitle', cfg.site_subtitle || defaultConfig.site_subtitle],
+        ['cloud_title', cfg.cloud_title || defaultConfig.cloud_title],
+        ['cloud_url', cfg.cloud_url || defaultConfig.cloud_url]
+      ]);
+    }
+
+    // Initialize everything
+    async function init() {
+      await initDataSDK();
+      setupSearch();
+      setupClickDetection();
+      setupAdmin();
+      setupForm();
+      
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities,
+          mapToEditPanelValues
+        });
+      }
+      
+      onConfigChange(config);
+    }
+
+    init();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c17e98a91e54a54',t:'MTc2OTAxMDA1MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
