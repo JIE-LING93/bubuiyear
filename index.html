@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>影片連結站</title>
+  <title>布布一二影片連結站</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&amp;display=swap" rel="stylesheet">
   <style>
@@ -22,12 +22,6 @@
     }
     .episode-item:hover {
       transform: translateX(4px);
-    }
-    .cloud-btn {
-      transition: all 0.3s ease;
-    }
-    .cloud-btn:hover {
-      transform: scale(1.02);
     }
     @keyframes float {
       0%, 100% { transform: translateY(0); }
@@ -48,7 +42,7 @@
      <svg width="64" height="64" viewbox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="48" height="40" rx="4" fill="#e94560" opacity="0.9" /> <polygon points="28,24 28,44 44,34" fill="white" />
      </svg>
     </div>
-    <h1 id="site-title" class="text-4xl md:text-5xl font-bold text-white mb-3">影片連結站</h1>
+    <h1 id="site-title" class="text-4xl md:text-5xl font-bold text-white mb-3">布布一二影片連結站</h1>
     <p id="site-subtitle" class="text-lg text-gray-300">收藏你喜愛的影片，輕鬆找到每一集</p><!-- Search Bar -->
     <div class="max-w-2xl mx-auto mt-8">
      <div class="relative"><input type="text" id="search-input" placeholder="🔍 搜尋系列名稱、集數、標題..." class="w-full px-6 py-4 rounded-2xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2);">
@@ -71,6 +65,8 @@
        </div>
        <div><label for="input-video-url" class="block text-white text-sm font-medium mb-2">影片連結</label> <input type="url" id="input-video-url" placeholder="https://youtube.com/watch?v=..." required class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
        </div>
+       <div><label for="input-description" class="block text-white text-sm font-medium mb-2">影片簡介（選填）</label> <textarea id="input-description" placeholder="例：這一集講述主角開始了他的冒險旅程..." rows="3" class="w-full px-4 py-3 rounded-xl text-white placeholder-gray-400 outline-none resize-none" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);"></textarea>
+       </div>
        <div><label for="input-series-color" class="block text-white text-sm font-medium mb-2">系列顏色</label> <input type="color" id="input-series-color" value="#667eea" class="w-full h-12 rounded-xl cursor-pointer" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
        </div><button type="submit" id="submit-btn" class="w-full py-4 rounded-xl font-bold text-white transition-all" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);"> ➕ 新增影片 </button>
       </form>
@@ -79,28 +75,7 @@
       </div>
       <div id="error-message" class="hidden mt-4 p-4 rounded-xl text-white text-center" style="background: rgba(244, 67, 54, 0.2);">
        ❌ 操作失敗，請稍後再試
-      </div><!-- Export/Import Section -->
-      <div class="mt-6 pt-6 border-t border-white/20">
-       <h3 class="text-lg font-bold text-white mb-4">📦 資料備份</h3>
-       <div class="flex gap-3"><button id="export-btn" class="flex-1 py-3 rounded-xl font-medium text-white transition-all" style="background: rgba(102,126,234,0.3); border: 1px solid rgba(102,126,234,0.5);"> 💾 匯出資料 </button> <button id="import-btn" class="flex-1 py-3 rounded-xl font-medium text-white transition-all" style="background: rgba(102,126,234,0.3); border: 1px solid rgba(102,126,234,0.5);"> 📥 匯入資料 </button>
-       </div><input type="file" id="import-file" accept=".json" class="hidden">
       </div>
-     </div>
-    </section><!-- Cloud Section -->
-    <section class="mb-12">
-     <div id="cloud-section" class="cloud-btn cursor-pointer rounded-2xl p-6 flex items-center justify-between" style="background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);">
-      <div class="flex items-center gap-4">
-       <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-        <svg width="32" height="32" viewbox="0 0 24 24" fill="white"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
-        </svg>
-       </div>
-       <div>
-        <h2 id="cloud-title" class="text-xl font-bold text-white">☁️ 雲端資源專區</h2>
-        <p class="text-white/80 text-sm">點擊前往雲端硬碟</p>
-       </div>
-      </div>
-      <svg width="24" height="24" viewbox="0 0 24 24" fill="white" class="opacity-80"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-      </svg>
      </div>
     </section><!-- Series Grid -->
     <section>
@@ -108,20 +83,17 @@
      <div id="series-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><!-- Will be populated by JavaScript -->
      </div>
      <div id="empty-state" class="text-center py-12 text-gray-400">
-      <p class="text-lg">目前還沒有影片，使用管理員模式開始新增吧！</p>
-      <p class="text-sm mt-2">💡 點擊標題下方空白處 5 次進入管理模式</p>
+      <p class="text-lg">目前還沒有影片</p>
      </div>
     </section>
    </main><!-- Footer -->
    <footer class="text-center py-8 text-gray-500 text-sm">
     <p>✨ 用心整理，輕鬆觀看 ✨</p>
-    <p class="text-xs mt-2">資料儲存在瀏覽器本地 | GitHub Pages 版本</p>
    </footer>
   </div>
   <script>
     // LocalStorage key
     const STORAGE_KEY = 'video_links_data';
-    const CLOUD_URL_KEY = 'video_links_cloud_url';
     
     let allVideos = [];
     let isAdminMode = false;
@@ -219,15 +191,18 @@
           </div>
           <div class="space-y-2">
             ${s.episodes.map(ep => `
-              <div class="episode-item flex items-center gap-2 px-4 py-2.5 rounded-lg" style="background: rgba(255,255,255,0.05);">
-                <a href="${ep.video_url}" target="_blank" rel="noopener noreferrer" class="flex-1 text-gray-200 hover:text-white no-underline" style="display: block;">
-                  <span class="text-sm font-medium" style="color: ${s.color};">${ep.episode_number}</span>
-                  <span class="ml-2">${ep.episode_title}</span>
-                </a>
-                ${isAdminMode ? `
-                  <button onclick="event.stopPropagation(); editVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
-                  <button onclick="event.stopPropagation(); deleteVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
-                ` : ''}
+              <div class="episode-item px-4 py-2.5 rounded-lg" style="background: rgba(255,255,255,0.05);">
+                <div class="flex items-center gap-2">
+                  <a href="${ep.video_url}" target="_blank" rel="noopener noreferrer" class="flex-1 text-gray-200 hover:text-white no-underline" style="display: block;">
+                    <span class="text-sm font-medium" style="color: ${s.color};">${ep.episode_number}</span>
+                    <span class="ml-2">${ep.episode_title}</span>
+                  </a>
+                  ${isAdminMode ? `
+                    <button onclick="event.stopPropagation(); editVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
+                    <button onclick="event.stopPropagation(); deleteVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
+                  ` : ''}
+                </div>
+                ${ep.description ? `<p class="text-gray-400 text-sm mt-1 ml-1">${ep.description}</p>` : ''}
               </div>
             `).join('')}
           </div>
@@ -282,15 +257,18 @@
             </div>
             <div class="space-y-2">
               ${s.episodes.map(ep => `
-                <div class="episode-item flex items-center gap-2 px-4 py-2.5 rounded-lg" style="background: rgba(255,255,255,0.05);">
-                  <a href="${ep.video_url}" target="_blank" rel="noopener noreferrer" class="flex-1 text-gray-200 hover:text-white no-underline" style="display: block;">
-                    <span class="text-sm font-medium" style="color: ${s.color};">${ep.episode_number}</span>
-                    <span class="ml-2">${ep.episode_title}</span>
-                  </a>
-                  ${isAdminMode ? `
-                    <button onclick="event.stopPropagation(); editVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
-                    <button onclick="event.stopPropagation(); deleteVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
-                  ` : ''}
+                <div class="episode-item px-4 py-2.5 rounded-lg" style="background: rgba(255,255,255,0.05);">
+                  <div class="flex items-center gap-2">
+                    <a href="${ep.video_url}" target="_blank" rel="noopener noreferrer" class="flex-1 text-gray-200 hover:text-white no-underline" style="display: block;">
+                      <span class="text-sm font-medium" style="color: ${s.color};">${ep.episode_number}</span>
+                      <span class="ml-2">${ep.episode_title}</span>
+                    </a>
+                    ${isAdminMode ? `
+                      <button onclick="event.stopPropagation(); editVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">✏️</button>
+                      <button onclick="event.stopPropagation(); deleteVideo('${ep.id}')" class="px-2 py-1 rounded text-xs text-white hover:bg-white/10 transition-all">🗑️</button>
+                    ` : ''}
+                  </div>
+                  ${ep.description ? `<p class="text-gray-400 text-sm mt-1 ml-1">${ep.description}</p>` : ''}
                 </div>
               `).join('')}
             </div>
@@ -514,6 +492,7 @@
       document.getElementById('input-episode-number').value = parseInt(epNum) || epNum;
       document.getElementById('input-episode-title').value = video.episode_title;
       document.getElementById('input-video-url').value = video.video_url;
+      document.getElementById('input-description').value = video.description || '';
       document.getElementById('input-series-color').value = video.series_color;
       
       const submitBtn = document.getElementById('submit-btn');
@@ -556,6 +535,7 @@
           episode_number: `EP.${episodeNum.padStart(2, '0')}`,
           episode_title: document.getElementById('input-episode-title').value.trim(),
           video_url: document.getElementById('input-video-url').value.trim(),
+          description: document.getElementById('input-description').value.trim(),
           series_color: document.getElementById('input-series-color').value,
           created_at: new Date().toISOString()
         };
@@ -581,89 +561,15 @@
       });
     }
 
-    // Export data
-    function setupExport() {
-      const exportBtn = document.getElementById('export-btn');
-      if (!exportBtn) return;
-      
-      exportBtn.addEventListener('click', () => {
-        const dataStr = JSON.stringify(allVideos, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `video_links_backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showMessage('success', '✅ 資料已匯出');
-      });
-    }
-
-    // Import data
-    function setupImport() {
-      const importBtn = document.getElementById('import-btn');
-      const importFile = document.getElementById('import-file');
-      
-      if (!importBtn || !importFile) return;
-      
-      importBtn.addEventListener('click', () => {
-        importFile.click();
-      });
-      
-      importFile.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const imported = JSON.parse(event.target.result);
-            if (Array.isArray(imported)) {
-              allVideos = imported;
-              saveData();
-              renderSeries();
-              updateSeriesList();
-              showMessage('success', '✅ 資料已匯入');
-            } else {
-              showMessage('error', '❌ 檔案格式錯誤');
-            }
-          } catch (err) {
-            showMessage('error', '❌ 檔案讀取失敗');
-          }
-        };
-        reader.readAsText(file);
-        importFile.value = '';
-      });
-    }
-
-    // Cloud section click
-    function setupCloudSection() {
-      const cloudSection = document.getElementById('cloud-section');
-      if (!cloudSection) return;
-      
-      cloudSection.addEventListener('click', () => {
-        const url = localStorage.getItem(CLOUD_URL_KEY) || '#';
-        if (url && url !== '#') {
-          window.open(url, '_blank', 'noopener,noreferrer');
-        }
-      });
-    }
-
     // Initialize
     function init() {
       loadData();
       setupSearch();
       setupClickDetection();
       setupForm();
-      setupExport();
-      setupImport();
-      setupCloudSection();
     }
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c17fd6741fea9c1',t:'MTc2OTAxMDg2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c181275c78ea9c1',t:'MTc2OTAxMTcyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
